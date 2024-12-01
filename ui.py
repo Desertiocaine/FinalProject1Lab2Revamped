@@ -22,7 +22,7 @@ def display_grades(scores: List[int], grades: List[str]) -> None:
     for i, (score, grade) in enumerate(zip(scores, grades), start=1):
         text.insert(tk.END, f"Student {i}: Score = {score}, Grade = {grade}\n")
 
-    # Handle window close event with confirmation
+    # This will handle window close event with confirmation
     def on_exit():
         if messagebox.askokcancel("Quit", "Do you really wish to quit?"):
             root.destroy()
