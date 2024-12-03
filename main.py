@@ -1,38 +1,40 @@
-from database import create_connection, create_table, add_student, get_all_students
-from data import get_student_scores
-from grades import calculate_grades
-from ui import display_grades
+from database import DatabaseHandler
+from data import StudentDataHandler
+from ui import StudentGradeApp
+from grades import calculate_grades, calculate_final_grade
 
 def main():
     """
     Main function to manage student scores and grades.
-    Connects to the database, collects inputs, calculates grades,
-    stores them, and displays results.
     """
     try:
-        # Connect to the SQLite database
-        connection = create_connection('students.db')
-        create_table(connection)
+        # Initialize database
+        db = DatabaseHandler('students.db')
+        db.create_table()
 
-        # Input: Number of students
-        number_of_students = int(input("Total number of students: "))
+        # Initialize UI
+        app = StudentGradeApp()
 
-        # Input: Scores separated by commas
-        student_scores = get_student_scores(number_of_students)
+        # Collect student data
+        student_name, student_scores = app.get_student_data()
 
-        # Calculate grades based on scores
+        # Calculate grades
         student_grades = calculate_grades(student_scores)
 
-        # Store each score and grade pair in the database
-        for score, grade in zip(student_scores, student_grades):
-            add_student(connection, score, grade)
+        # Calculate final grade
+        try:
+            final_grade = calculate_final_grade(student_scores)
+            print(f"Student: {student_name}, Final Grade: {final_grade}")
+        except ValueError as ve:
+            print(f"Error calculating final grade: {ve}")
+            return
 
-        # Retrieve all stored student records and display them
-        stored_students = get_all_students(connection)
-        display_grades(
-            [record[1] for record in stored_students],  # scores
-            [record[2] for record in stored_students]   # grades
-        )
+        # Store data
+        for score, grade in zip(student_scores, student_grades):
+            db.add_student(student_name, score, grade)
+
+        # Display all stored student records
+        app.display_grades(db.get_all_students())
 
     except Exception as error:
         print(f"An error occurred: {error}")
