@@ -3,6 +3,7 @@ from tkinter import messagebox
 import re
 from database import DatabaseHandler
 from grades import calculate_final_grade
+import sqlite3
 
 class StudentGradeApp:
     def __init__(self):
@@ -117,10 +118,11 @@ class StudentGradeApp:
         # Insert data into the database
         try:
             self.db.add_student(first_name, last_name, student_id, scores, final_grade, letter_grade)
-            messagebox.showinfo("Success", f"Student {first_name} {last_name} submitted successfully!")
         except sqlite3.IntegrityError:
             self.show_error("Student ID already exists. Please use a unique ID.", "red")
             return
+
+        messagebox.showinfo("Success", f"Student {first_name} {last_name} submitted successfully!")
 
         # Clear all fields after successful submission
         self.clear_fields()

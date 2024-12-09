@@ -38,8 +38,14 @@ def main():
         for record in stored_data:
             print(record)
 
+
+    except KeyboardInterrupt:
+        print("Application interrupted by user.")
     except Exception as error:
         print(f"An error occurred: {error}")
+    finally:
+        db.close_connection()
+
 
 if __name__ == "__main__":
     main()

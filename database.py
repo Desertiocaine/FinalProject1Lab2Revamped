@@ -69,7 +69,6 @@ class DatabaseHandler:
         """
         try:
             scores_json = json.dumps(scores)  # Convert scores list to JSON string
-
             cursor = self.conn.cursor()
             cursor.execute(
                 '''
@@ -80,7 +79,7 @@ class DatabaseHandler:
             )
             self.conn.commit()
         except sqlite3.IntegrityError:
-            print(f"Error: Student ID '{student_id}' already exists.")
+            raise
         except sqlite3.Error as e:
             print(f"The error '{e}' occurred")
 
