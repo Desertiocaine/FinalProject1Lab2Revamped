@@ -1,6 +1,5 @@
 from typing import List
 
-
 class StudentDataHandler:
     """
     Handle and validate student data including names and scores.

@@ -1,90 +1,164 @@
 import tkinter as tk
 from tkinter import messagebox
+import re
+from database import DatabaseHandler
+from grades import calculate_final_grade
 
 class StudentGradeApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Student Grades")
-        self.root.configure(bg='#f0f0f0')
+        self.root.title("Student Grade App")
+        self.center_window()
+        self.create_widgets()
+        self.score_entries = []
+        self.score_labels = []  # Store references to score labels
+        self.db = DatabaseHandler()  # Initialize the database handler
 
-        # Styling configuration
-        style = {
-            'font': ('Helvetica', 12),
-            'padx': 10,
-            'pady': 5,
-            'bg': '#f0f0f0'
-        }
+    def center_window(self):
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f'+{x}+{y}')
 
-        # Student Name
-        tk.Label(self.root, text="Student Name:", **style).pack(anchor='w', padx=10)
-        self.name_entry = tk.Entry(self.root)
-        self.name_entry.pack(fill='x', pady=5, padx=10)
-        self.name_entry.bind("<Return>", self.focus_next_widget)
+    def create_widgets(self):
+        # Add labels and entries for first name, last name, and student ID
+        self.first_name_label = tk.Label(self.root, text="First Name:")
+        self.first_name_label.pack(pady=5, padx=10, anchor='w')
 
-        # Number of Scores
-        tk.Label(self.root, text="Number of Scores:", **style).pack(anchor='w', padx=10)
+        self.first_name_entry = tk.Entry(self.root)
+        self.first_name_entry.pack(pady=5, padx=10, fill='x')
+
+        self.last_name_label = tk.Label(self.root, text="Last Name:")
+        self.last_name_label.pack(pady=5, padx=10, anchor='w')
+
+        self.last_name_entry = tk.Entry(self.root)
+        self.last_name_entry.pack(pady=5, padx=10, fill='x')
+
+        self.student_id_label = tk.Label(self.root, text="Student ID:")
+        self.student_id_label.pack(pady=5, padx=10, anchor='w')
+
+        self.student_id_entry = tk.Entry(self.root)
+        self.student_id_entry.pack(pady=5, padx=10, fill='x')
+
+        # Existing widgets for scores
+        self.scores_label = tk.Label(self.root, text="Number of Scores:")
+        self.scores_label.pack(pady=5, padx=10, anchor='w')
+
         self.scores_entry = tk.Entry(self.root)
-        self.scores_entry.pack(fill='x', pady=5, padx=10)
-        self.scores_entry.bind("<FocusOut>", self.create_score_entries)
-        self.scores_entry.bind("<Return>", self.focus_next_widget)
+        self.scores_entry.pack(pady=5, padx=10, fill='x')
 
-        # Container for dynamic score entries
-        self.score_entries_frame = tk.Frame(self.root, bg='#f0f0f0')
-        self.score_entries_frame.pack(pady=5, padx=10, fill='x')
+        self.create_scores_button = tk.Button(self.root, text="Create Score Fields", command=self.create_score_fields, bg="#add8e6", font=("Helvetica", 10, "bold"))
+        self.create_scores_button.pack(pady=10, padx=10)
 
-        # Submit Button
-        submit_button = tk.Button(self.root, text="SUBMIT", command=self.submit, bg='#4CAF50', fg='white')
-        submit_button.pack(pady=10, padx=10)
+        self.submit_button = tk.Button(self.root, text="Submit", command=self.submit, bg="green")
+        self.submit_button.pack(pady=10, padx=10)
+        self.submit_button.pack_forget()  # Hide the submit button initially
 
-        self.root.mainloop()
-
-    def create_score_entries(self, event=None):
-        # Clean up existing score entries
-        for widget in self.score_entries_frame.winfo_children():
-            widget.destroy()
-
+    def create_score_fields(self):
+        # Validate number of scores
         try:
             num_scores = int(self.scores_entry.get())
-            if 1 <= num_scores <= 4:
-                for i in range(num_scores):
-                    tk.Label(self.score_entries_frame, text=f"Score {i+1}:", bg='#f0f0f0').pack(anchor='w')
-                    entry = tk.Entry(self.score_entries_frame)
-                    entry.bind("<Return>", self.focus_next_widget)
-                    entry.pack(fill='x', pady=2)
-                self.root.geometry("")
+            if num_scores < 1 or num_scores > 5:
+                raise ValueError
         except ValueError:
-            self.show_error("Please enter a valid number of scores.", 'gold')
-
-    def focus_next_widget(self, event=None):
-        event.widget.tk_focusNext().focus()
-        return "break"
-
-    def submit(self):
-        student_name = self.name_entry.get().strip()
-        if not student_name or not all(part.isalpha() for part in student_name.split()):
-            self.show_error("Name must contain only letters and spaces.", 'lightcoral')
+            self.show_error("Invalid number of scores. Enter a number between 1 and 5.", "light blue")
             return
 
-        score_values = []
-        for widget in self.score_entries_frame.winfo_children():
-            if isinstance(widget, tk.Entry):
-                score_str = widget.get().strip()
-                if not score_str.isdigit() or not (0 <= int(score_str) <= 100):
-                    self.show_error("Scores must be numbers between 0 and 100.", 'gold')
-                    return
-                score_values.append(int(score_str))
+        # Clear previous score entries and labels
+        for label in self.score_labels:
+            label.destroy()
+        for entry in self.score_entries:
+            entry.destroy()
+        self.score_labels = []
+        self.score_entries = []
 
-        if score_values:
-            messagebox.showinfo("Success", f"Submitted: {student_name} with scores {score_values}")
-        else:
-            self.show_error("Please enter valid scores.", 'lightcoral')
+        # Create new score entries
+        for i in range(num_scores):
+            label = tk.Label(self.root, text=f"Score {i + 1}:")
+            label.pack(pady=5, padx=10, anchor='w')
+            entry = tk.Entry(self.root)
+            entry.pack(pady=5, padx=10, fill='x')
+            self.score_labels.append(label)
+            self.score_entries.append(entry)
+
+        self.submit_button.pack(pady=10, padx=10)  # Show the submit button
+
+    def submit(self):
+        # Validate first name, last name, and student ID
+        first_name = self.first_name_entry.get().strip()
+        last_name = self.last_name_entry.get().strip()
+        student_id = self.student_id_entry.get().strip()
+
+        if not re.match(r"^[A-Za-z\s]+$", first_name) or not re.match(r"^[A-Za-z\s]+$", last_name):
+            self.show_error("Invalid name. Only letters and spaces are allowed.", "red")
+            return
+
+        if not student_id.isdigit() or not (10000 <= int(student_id) <= 99999):
+            self.show_error("Student ID must be a number between 10000 and 99999.", "red")
+            return
+
+        # Validate scores
+        scores = []
+        for entry in self.score_entries:
+            try:
+                score = int(entry.get())
+                if score < 0 or score > 100:
+                    raise ValueError
+                scores.append(score)
+            except ValueError:
+                self.show_error("Invalid score. Enter a number between 0 and 100.", "light blue")
+                return
+
+        # Calculate final grade and letter grade
+        final_grade, letter_grade = calculate_final_grade(scores)
+
+        # Insert data into the database
+        try:
+            self.db.add_student(first_name, last_name, student_id, scores, final_grade, letter_grade)
+            messagebox.showinfo("Success", f"Student {first_name} {last_name} submitted successfully!")
+        except sqlite3.IntegrityError:
+            self.show_error("Student ID already exists. Please use a unique ID.", "red")
+            return
+
+        # Clear all fields after successful submission
+        self.clear_fields()
 
     def show_error(self, message, bg_color):
-        error_window = tk.Toplevel(self.root)
-        error_window.configure(bg=bg_color)
-        tk.Label(error_window, text=message, bg=bg_color, font=('Helvetica', 12)).pack(padx=20, pady=10)
-        tk.Button(error_window, text="OK", command=error_window.destroy, bg='#4CAF50', fg='white').pack(pady=5)
+        messagebox.showerror("Error", message)
+        self.root.configure(bg=bg_color)
 
-# Run the application
-if __name__ == '__main__':
-    StudentGradeApp()
+    def clear_fields(self):
+        self.first_name_entry.delete(0, tk.END)
+        self.last_name_entry.delete(0, tk.END)
+        self.student_id_entry.delete(0, tk.END)
+        self.scores_entry.delete(0, tk.END)
+        for label in self.score_labels:
+            label.destroy()  # Destroy the label widgets
+        for entry in self.score_entries:
+            entry.destroy()  # Destroy the entry widgets
+        self.submit_button.pack_forget()  # Hide the submit button again
+        self.score_labels = []  # Clear the list of score labels
+        self.score_entries = []  # Clear the list of score entries
+
+    def get_student_data(self):
+        """
+        Retrieve the student data from the UI.
+        """
+        first_name = self.first_name_entry.get().strip()
+        last_name = self.last_name_entry.get().strip()
+        student_id = self.student_id_entry.get().strip()
+        scores = [int(entry.get()) for entry in self.score_entries]
+        return first_name, last_name, student_id, scores
+
+    def display_grades(self, stored_data):
+        """
+        Display the stored student grades in a message box.
+        """
+        grades_message = "\n".join([f"{record[0]} {record[1]} (ID: {record[2]}): Final Grade: {record[4]}, Letter Grade: {record[5]}" for record in stored_data])
+        messagebox.showinfo("Stored Grades", grades_message)
+
+if __name__ == "__main__":
+    app = StudentGradeApp()
+    app.root.mainloop()

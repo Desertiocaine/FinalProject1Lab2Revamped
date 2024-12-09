@@ -1,4 +1,3 @@
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -77,13 +76,4 @@ config.ini
 
 # Visual Studio Code
 .vscode/
-```
 
-### Key Exclusions
-
-- **Compiled Python Files**: `__pycache__`, `*.pyc`, etc.
-- **Packaging Artifacts**: `dist/`, `build/`, etc.
-- **Environment and Log Files**: `.env`, `pip-log.txt`
-- **IDE Configurations**: `.idea/`, `.vscode/`
-- **Database Files**: `*.db`
-- **Test and Coverage**: `.pytest_cache/`

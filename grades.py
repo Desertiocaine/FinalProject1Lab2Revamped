@@ -1,6 +1,5 @@
 from typing import List
 
-
 def calculate_grades(scores: List[int]) -> List[str]:
     """
     Calculate grades based on student scores using a relative grading system.
@@ -25,8 +24,7 @@ def calculate_grades(scores: List[int]) -> List[str]:
 
     return grades
 
-
-def calculate_final_grade(scores: List[int]) -> float:
+def calculate_final_grade(scores):
     """
     Calculate the final grade based on given scores.
 
@@ -34,9 +32,35 @@ def calculate_final_grade(scores: List[int]) -> float:
         scores (List[int]): List of scores.
 
     Returns:
-        float: Calculated final grade based on average.
+        tuple: Calculated final grade (float) and corresponding letter grade (str).
     """
     if not scores:
         raise ValueError("Scores list cannot be empty")
 
-    return sum(scores) / len(scores)  # Example: average score
+    # Filter out redundant placeholder scores
+    actual_scores = [score for score in scores if score > 0]
+
+    final_grade = round(sum(actual_scores) / len(actual_scores), 2)  # Format to 2 decimal places
+    letter_grade = get_letter_grade(final_grade)
+    return final_grade, letter_grade
+
+def get_letter_grade(score):
+    """
+    Determine the letter grade based on the numerical score.
+
+    Args:
+        score (float): Numerical score.
+
+    Returns:
+        str: Corresponding letter grade.
+    """
+    if score >= 90:
+        return 'A'
+    elif score >= 80:
+        return 'B'
+    elif score >= 70:
+        return 'C'
+    elif score >= 60:
+        return 'D'
+    else:
+        return 'F'
